@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <BaseHref>https://jozefpodlecki.github.io/boids-blazor/</BaseHref>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,6 +15,14 @@
 
   <Target Name="Tailwind" BeforeTargets="Compile">
     <Exec Command="npx tailwindcss -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css" />
+  </Target>
+
+  <Target Name="ReplaceBaseHref" AfterTargets="Publish">
+  <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)\replaceBaseHref.ps1 $(PublishDir)wwwroot\index.html https://jozefpodlecki.github.io/boids-blazor/" />
+</Target>
+
+  <Target Name="MinifyTailwind" AfterTargets="Publish">
+    <Exec Command="npx tailwindcss -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css --minify" />
   </Target>
 
 </Project>
