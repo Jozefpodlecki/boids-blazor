@@ -1,0 +1,61 @@
+@using FlockingSimulator.Components.Icons
+
+<div class="absolute bottom-0 text-white flex p-2 w-full justify-end">
+    <div class="flex flex-grow-1">
+            <a class="cursor-pointer"
+                href="https://github.com/Jozefpodlecki/boids-blazor">
+                <GithubIcon/>
+            </a>
+            <span class="pl-2">© Jozef Podlecki 2025</span>
+        </div>
+   
+    <div class="flex">
+        <div class="cursor-pointer ml-2" @onclick="OnRun">
+            @if (IsRunning)
+            {
+                <PauseIcon/>
+            }
+            else
+            {
+                <PlayIcon/>
+            }
+        </div>
+        <div class="cursor-pointer ml-2" @onclick="OnSettings">
+            <PhotoIcon/>
+        </div>
+        <div class="cursor-pointer ml-2" @onclick="OnDebug">
+            @if (IsDebugEnabled)
+            {
+                <DebugIcon/>
+            }
+            else
+            {
+                <DebugOffIcon/>
+            }
+        </div>
+    
+        <div class="cursor-pointer ml-2" @onclick="OnSettings">
+            <SettingsIcon/>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsRunning { get; set; }
+
+    [Parameter]
+    public bool IsDebugEnabled { get; set; }
+
+    [Parameter]
+    public EventCallback OnDebug { get; set; }
+
+    [Parameter]
+    public EventCallback OnSettings { get; set; }
+
+    [Parameter]
+    public EventCallback OnScreenshot { get; set; }
+
+    [Parameter]
+    public EventCallback OnRun { get; set; }
+}

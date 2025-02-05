@@ -1,6 +1,6 @@
 function registerEvents(dotNetHelper) {
     document.addEventListener("visibilitychange", () => {
-        dotNetHelper.invokeMethodAsync("OnVisibilityChange", !document.hidden);
+        dotNetHelper.invokeMethodAsync("OnVisibilityChange", document.hidden);
     });
 
     function resizeCanvas() {

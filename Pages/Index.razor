@@ -1,35 +1,25 @@
 ﻿@page "/"
 @using Blazor.Extensions
 @using Blazor.Extensions.Canvas.Canvas2D
+@using FlockingSimulator.Components
+@using FlockingSimulator.Components.Icons
 
 @inject ILogger<Index> Logger;
 @inject IJSRuntime JsRuntime;
 
-<div>
-    <BECanvas @ref="_canvasReference"></BECanvas>
-</div>
-<div class="absolute bottom-0 text-white flex p-2 w-full justify-end">
-    <div class="flex flex-grow-1">
-            <a class="cursor-pointer" href="https://github.com/Jozefpodlecki/boids-blazor">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-brand-github"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
-                </svg>
-            </a>
-            <span class="pl-2">© Jozef Podlecki 2025</span>
-        </div>
-   
-    <div class="flex">
-        <div class="cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-bug"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 9v-1a3 3 0 0 1 6 0v1" /><path d="M8 9h8a6 6 0 0 1 1 3v3a5 5 0 0 1 -10 0v-3a6 6 0 0 1 1 -3" /><path d="M3 13l4 0" /><path d="M17 13l4 0" /><path d="M12 20l0 -6" /><path d="M4 19l3.35 -2" /><path d="M20 19l-3.35 -2" /><path d="M4 7l3.75 2.4" /><path d="M20 7l-3.75 2.4" />
-            </svg>
-        </div>
-    
-        <div class="cursor-pointer">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-adjustments-horizontal"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" />
-            </svg> 
-        </div>
-    </div>
-    
-</div>
+<BECanvas @ref="_canvasReference"></BECanvas>
+<BottomPanel
+    IsDebugEnabled="_isDebugEnabled"
+    IsRunning="_isRunning"
+    OnDebug="OnDebug"
+    OnScreenshot="OnScreenshot"
+    OnRun="OnRun"
+    OnSettings="OnSettings"  />
+
+@if (_isConfigurationVisible)
+{
+    <Configuration Options="_options" OptionsChanged="OptionsChanged" OnClose="CloseModal" />
+}
 
 @code
 {
@@ -37,8 +27,9 @@
     private Canvas2DContext _outputCanvasContext = default!;
     private BoidsSimulatorOptions _options = default!;
     private BoidsSimulator _simulator = default!;
-    
-    private const double _frameThresholdMs = 16.66;
+    private bool _isConfigurationVisible = false;
+    private bool _isDebugEnabled = false;
+    private bool _isRunning = true;
     private double _lastFrameTimestamp;
     private bool _isHidden;
 
@@ -57,13 +48,11 @@
     }
 
     private void SetupSimulator(double width, double height) {
-        _options = new BoidsSimulatorOptions()
-        {
-            Count = 50,
-            Width = (int)width,
-            Height = (int)height
-        };
+        _options ??= new BoidsSimulatorOptions();
 
+        _options.Width = (int)width;
+        _options.Height = (int)height;
+        
         _simulator = new BoidsSimulator(Logger, _options);
     }
 
@@ -92,10 +81,45 @@
         _isHidden = isHidden;
     }
 
+    private void OptionsChanged(BoidsSimulatorOptions options)
+    {
+        Logger.LogDebug("OptionsChanged: {}", options);
+
+        if(_options.Fps != options.Fps)
+        {
+            Logger.LogDebug("Fps Changed: {}", options);
+        }
+
+        var recreateSimulator = false;
+
+        if(_options.MaxSpeed != options.MaxSpeed
+            || _options.Count != options.Count
+            || _options.SeparationDistance != options.SeparationDistance
+            || _options.PerceptionRadius != options.PerceptionRadius)
+        {
+            recreateSimulator = true;
+        }
+
+        _options.Fps = options.Fps;
+        _options.FrameThresholdMilliseconds = options.FrameThresholdMilliseconds;
+        _options.SeparationDistance = options.SeparationDistance;
+        _options.PerceptionRadius = options.PerceptionRadius;
+        _options.Count = options.Count;
+        _options.MaxSpeed = options.MaxSpeed;
+
+        if(recreateSimulator)
+        {
+            _simulator = new BoidsSimulator(Logger, _options);
+        }
+    }
 
     [JSInvokable]
     public async ValueTask OnFrame(double timestamp)
     {
+        if(!_isRunning) {
+            return;
+        }
+
         if(_simulator == null) {
             return;
         }
@@ -104,7 +128,7 @@
             return;
         }
 
-        if (timestamp - _lastFrameTimestamp < _frameThresholdMs)
+        if (timestamp - _lastFrameTimestamp < _options.FrameThresholdMilliseconds)
         {
             Logger.LogDebug("{} {} {}", timestamp, _lastFrameTimestamp, timestamp - _lastFrameTimestamp);
             return;
@@ -113,7 +137,38 @@
         _lastFrameTimestamp = timestamp;
 
         await _outputCanvasContext.ClearRectAsync(0, 0, _options.Width, _options.Height);
-        await _simulator.UpdateAndRenderAsync(_outputCanvasContext);
+        await _simulator.UpdateAndRenderAsync(_outputCanvasContext, _isDebugEnabled);
     }
 
+    private void OnSettings()
+    {
+        Logger.LogDebug("Settings Popup");
+        _isConfigurationVisible = true;
+    }
+
+    private void OnScreenshot()
+    {
+
+    }
+
+    private void OnRun()
+    {
+        _isRunning = !_isRunning;
+    }
+
+    private void OnDebug()
+    {
+        Logger.LogDebug("Debug Toggle: {}", _isDebugEnabled);
+        _isDebugEnabled  = !_isDebugEnabled;
+    }
+
+    private void CloseModal()
+    {
+        _isConfigurationVisible = false;
+    }
+
+    private void OnOptionsChange(BoidsSimulatorOptions updatedOptions)
+    {
+        _options = updatedOptions;
+    }
 }

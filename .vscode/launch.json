@@ -7,7 +7,34 @@
             "request": "launch",
             "cwd": "${workspaceFolder}",
             "browser": "chrome",
+        },
+        {
+            "name": "Watch",
+            "type": "coreclr",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "program": "dotnet",
+            "args": [
+                "watch",
+                "--project",
+                ".",
+                "--verbose"
+            ]
+        },
+        {
+            "name": "Attach",
+            "type": "blazorwasm",
+            "request": "attach",
+            "cwd": "${workspaceFolder}",
+            "url": "https://localhost:5244",
+            "timeout": 120000,
+            "browser": "chrome",
         }
-
+    ],
+    "compounds": [
+        {
+            "name": "Debug with Hot Reload",
+            "configurations": [ "Watch", "Attach" ]
+        }
     ]
 }
