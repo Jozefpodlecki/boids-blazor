@@ -22,6 +22,10 @@ jobs:
           node-version: '22'
       - name: Npm
         run: npm install
+      - name: Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
       # - name: Tailwind
       #   run: npx @tailwindcss/cli -i ./styles/main.css -o ./styles/output.css --minify 
       - name: Build
