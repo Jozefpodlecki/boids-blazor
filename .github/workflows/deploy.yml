@@ -21,7 +21,8 @@ jobs:
         with:
           node-version: '22'
       - name: Npm
-        run: npm install
+        run: npm ci
+        working-directory: ./App
       - name: Dotnet
         uses: actions/setup-dotnet@v4
         with:
