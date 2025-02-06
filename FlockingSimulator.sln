@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlockingSimulator", "FlockingSimulator.csproj", "{7926FBD1-EE2B-4D25-9239-7351DFCD139B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlockingSimulator", "App\FlockingSimulator.csproj", "{7926FBD1-EE2B-4D25-9239-7351DFCD139B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{6DB4F51E-068B-40D0-B8E0-1E949CCF18E3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +20,9 @@ Global
 		{7926FBD1-EE2B-4D25-9239-7351DFCD139B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7926FBD1-EE2B-4D25-9239-7351DFCD139B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7926FBD1-EE2B-4D25-9239-7351DFCD139B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DB4F51E-068B-40D0-B8E0-1E949CCF18E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DB4F51E-068B-40D0-B8E0-1E949CCF18E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DB4F51E-068B-40D0-B8E0-1E949CCF18E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DB4F51E-068B-40D0-B8E0-1E949CCF18E3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

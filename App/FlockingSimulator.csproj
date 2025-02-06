@@ -13,13 +13,18 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.1" PrivateAssets="all" />
   </ItemGroup>
 
+
+  <Target Name="Libs" BeforeTargets="Compile">
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)\copyLibs.ps1" />
+  </Target>
+
   <Target Name="Tailwind" BeforeTargets="Compile">
     <Exec Command="npx tailwindcss -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css" />
   </Target>
 
   <Target Name="ReplaceBaseHref" AfterTargets="Publish">
-  <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)\replaceBaseHref.ps1 $(PublishDir)wwwroot\index.html https://jozefpodlecki.github.io/boids-blazor/" />
-</Target>
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)\replaceBaseHref.ps1 $(PublishDir)wwwroot\index.html $(BaseHref)" />
+  </Target>
 
   <Target Name="MinifyTailwind" AfterTargets="Publish">
     <Exec Command="npx tailwindcss -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css --minify" />

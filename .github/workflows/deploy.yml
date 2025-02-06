@@ -26,9 +26,15 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      # - name: Tailwind
-      #   run: npx @tailwindcss/cli -i ./styles/main.css -o ./styles/output.css --minify 
-      - name: Build
+      - name: Test
+        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      - name: Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./Tests/coverage.opencover.xml
+          fail_ci_if_error: true
+      - name: Publish
         run: dotnet publish --configuration Release --output build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

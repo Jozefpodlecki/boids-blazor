@@ -1,0 +1,20 @@
+@using FlockingSimulator.Components
+@inherits TestContext
+
+@code {
+    [Fact]
+	public async Task ShouldDrawCanvas()
+	{
+		@* JSInterop.Setup<Object>("BlazorExtensions.Canvas2d.add", _ => true).SetResult(new object());
+		JSInterop.Setup<Object>("BlazorExtensions.Canvas2d.callBatch", _ => true).SetResult(new object());
+		JSInterop.SetupVoid("registerEvents", _ => true).SetVoidResult();
+		JSInterop.SetupVoid("startAnimationFrame", _ => true).SetVoidResult();
+
+		var simulator = RenderComponent<Simulator>();
+
+		await simulator.InvokeAsync(async () => {
+			await simulator.Instance.OnResizeAsync(600, 400);
+			await simulator.Instance.OnFrameAsync(1000);
+		}); *@
+	}
+}

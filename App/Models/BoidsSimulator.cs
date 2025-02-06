@@ -1,5 +1,6 @@
 using System.Numerics;
 using Blazor.Extensions.Canvas.Canvas2D;
+using Blazor.Extensions.Canvas.WebGL;
 
 /// <summary>
 /// See <see cref="https://en.wikipedia.org/wiki/Boids"/>
@@ -7,13 +8,18 @@ using Blazor.Extensions.Canvas.Canvas2D;
 /// </summary>
 public class BoidsSimulator
 {
+    private IRenderer _renderer;
     private readonly ILogger _logger;
     private readonly Random _random = new Random();
     private readonly BoidsSimulatorOptions _options;
-    private readonly IEnumerable<BirdOidObject> _boids = Enumerable.Empty<BirdOidObject>();
+    private readonly BirdOidObject[] _boids = Array.Empty<BirdOidObject>();
 
-    public BoidsSimulator(ILogger logger, BoidsSimulatorOptions options)
+    public BoidsSimulator(
+        IRenderer renderer,
+        ILogger logger,
+        BoidsSimulatorOptions options)
     {
+        _renderer = renderer;
         _logger = logger;
         _options = options;
 
@@ -36,30 +42,18 @@ public class BoidsSimulator
         _boids = boids;
     }
 
-    public async Task UpdateAndRenderAsync(Canvas2DContext context, bool isDebugEnabled)
+    public async Task SetupAsync()
     {
-        var radius = 3;
-        var startAngle = 0;
-        var endAngle = 2 * Math.PI;
-        var fillColor = "#FFF";
-        await context.SetFillStyleAsync(fillColor);
-        await context.BeginBatchAsync();
+        await _renderer.SetupAsync();
+    }
 
-        foreach (var boid in _boids)
-        {
-            boid.Update(_boids, _random);
-            await context.BeginPathAsync();
-            await context.ArcAsync(boid.Position.X, boid.Position.Y, radius, startAngle , endAngle);
-            
-            if(isDebugEnabled && boid.Index % 10 == 0)
-            {
-                await context.FillTextAsync(boid.ToString(), boid.Position.X, boid.Position.Y);
-            }
+    public async Task UpdateAndRenderAsync(bool isDebugEnabled)
+    {
+        await _renderer.RenderAsync(_boids, _options, _random, isDebugEnabled);
+    }
 
-            await context.FillAsync();
-            await context.ClosePathAsync();
-        }
-
-        await context.EndBatchAsync();
+    public async Task CleanupAsync()
+    {
+        await _renderer.CleanupAsync();
     }
 }

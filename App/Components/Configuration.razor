@@ -11,6 +11,19 @@
             <CloseIcon Width="20" Height="20" />
         </div>
     </div>
+     <section class="pt-2">
+        <label for="drawing-context" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Drawing Context</label>
+        <select
+            id="drawing-context"
+            value="@Context"
+            @onchange="OnContextChange"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+            @foreach (var context in DrawingContexts)
+            {
+                <option selected="@((context == Context) ? "selected" : null)" value="@context">@context</option>
+            }
+        </select>
+    </section>
     <section class="pt-2">
         <div class="relative mb-6">
             <label for="fps" class="text-sm font-medium text-white">Fps Threshold: @Options.Fps</label>
@@ -96,6 +109,12 @@
 </div>
 
 @code {
+    [Parameter, EditorRequired]
+    public string Context { get; set; }
+
+    [Parameter, EditorRequired]
+    public IEnumerable<string> DrawingContexts { get; set; } = Enumerable.Empty<string>();
+
     [Parameter]
     public BoidsSimulatorOptions Options { get; set; } = new();
 
@@ -105,7 +124,16 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
 
+    [Parameter]
+    public EventCallback<string> ContextChanged { get; set; }
+
     private BoidsSimulatorOptions CurrentOptions;
+
+    private async Task OnContextChange(ChangeEventArgs eventArgs)
+    {
+       var value = eventArgs.Value.ToString();
+       await ContextChanged.InvokeAsync(value);
+    }
 
     private async Task OnFpsChangeAsync(int value)
     {

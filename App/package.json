@@ -2,7 +2,7 @@
   "name": "flocking-simulator",
   "version": "1.0.0",
   "private": true,
-  "description": "Flocking simulator",
+  "description": "Interactive Flocking Simulator demonstrating Boid algorithm behaviors like cohesion, separation, and alignment. Visualize realistic bird-like movement patterns in a dynamic environment.",
   "homepage": "https://github.com/Jozefpodlecki/boids-blazor#readme",
   "bugs": {
     "url": "https://github.com/Jozefpodlecki/boids-blazor/issues"
@@ -17,6 +17,7 @@
   "scripts": {},
   "dependencies": {
     "@tailwindcss/cli": "^4.0.3",
+    "html2canvas": "^1.4.1",
     "tailwindcss": "^4.0.3"
   }
 }

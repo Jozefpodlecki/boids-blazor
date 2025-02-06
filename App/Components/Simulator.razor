@@ -1,4 +1,3 @@
-﻿@page "/"
 @using Blazor.Extensions
 @using Blazor.Extensions.Canvas.Canvas2D
 @using FlockingSimulator.Components
@@ -7,7 +6,7 @@
 @inject ILogger<Index> Logger;
 @inject IJSRuntime JsRuntime;
 
-<BECanvas @ref="_canvasReference"></BECanvas>
+<BECanvas @key="_selectedContext" @ref="_canvasReference"></BECanvas>
 <BottomPanel
     IsDebugEnabled="_isDebugEnabled"
     IsRunning="_isRunning"
@@ -18,15 +17,23 @@
 
 @if (_isConfigurationVisible)
 {
-    <Configuration Options="_options" OptionsChanged="OptionsChanged" OnClose="CloseModal" />
+    <Configuration
+        Options="_options"
+        Context="@_selectedContext"
+        DrawingContexts="_availableContexts"
+        ContextChanged="ContextChanged"
+        OptionsChanged="OptionsChanged"
+        OnClose="CloseModal" />
 }
 
 @code
 {
-    private BECanvasComponent _canvasReference = default!;
-    private Canvas2DContext _outputCanvasContext = default!;
+    private BECanvasComponent? _canvasReference = null;
     private BoidsSimulatorOptions _options = default!;
     private BoidsSimulator _simulator = default!;
+    @* private string _selectedContext = "2d"; *@
+    private string _selectedContext = "webgl";
+    private string[] _availableContexts = new string[0];
     private bool _isConfigurationVisible = false;
     private bool _isDebugEnabled = false;
     private bool _isRunning = true;
@@ -39,21 +46,24 @@
             return;
         }
 
-        Logger.LogDebug("First Render");
         var dotNetReference = DotNetObjectReference.Create(this);
-        _outputCanvasContext = await _canvasReference.CreateCanvas2DAsync();
-
         await JsRuntime.InvokeVoidAsync("registerEvents", dotNetReference);
         await JsRuntime.InvokeVoidAsync("startAnimationFrame", dotNetReference);
+
+        _availableContexts = await JsRuntime.InvokeAsync<string[]>("getAvailableContexts");
+        Logger.LogDebug("Available contexts: {0}", _availableContexts);
     }
 
-    private void SetupSimulator(double width, double height) {
-        _options ??= new BoidsSimulatorOptions();
+    private async Task ContextChanged(string context)
+    {
+        _selectedContext = context;
+    }
 
-        _options.Width = (int)width;
-        _options.Height = (int)height;
-        
-        _simulator = new BoidsSimulator(Logger, _options);
+    private async Task SetupSimulatorAsync()
+    {  
+        var renderer = await RendererFactory.GetRendererAsync(_selectedContext, _canvasReference);
+        _simulator = new BoidsSimulator(renderer, Logger, _options);
+        await _simulator.SetupAsync();
     }
 
     private async ValueTask SetCanvasResolutionAsync(double width, double height)
@@ -63,15 +73,21 @@
             { nameof(BECanvasComponent.Width), (long)width },
             { nameof(BECanvasComponent.Height), (long)height }
         };
+
         await _canvasReference.SetParametersAsync(ParameterView.FromDictionary(parameters));
     }
 
     [JSInvokable]
-    public async ValueTask OnResize(double width, double height)
+    public async ValueTask OnResizeAsync(double width, double height)
     {
         Logger.LogDebug("OnResize: {} {}", width, height);
         await SetCanvasResolutionAsync(width, height);
-        SetupSimulator(width, height);
+        
+        _options ??= new BoidsSimulatorOptions();
+
+        _options.Width = (int)width;
+        _options.Height = (int)height;
+        await SetupSimulatorAsync();
     }
 
     [JSInvokable]
@@ -81,7 +97,7 @@
         _isHidden = isHidden;
     }
 
-    private void OptionsChanged(BoidsSimulatorOptions options)
+    private async Task OptionsChanged(BoidsSimulatorOptions options)
     {
         Logger.LogDebug("OptionsChanged: {}", options);
 
@@ -109,22 +125,15 @@
 
         if(recreateSimulator)
         {
-            _simulator = new BoidsSimulator(Logger, _options);
+            await SetupSimulatorAsync();
         }
     }
 
     [JSInvokable]
-    public async ValueTask OnFrame(double timestamp)
+    public async ValueTask OnFrameAsync(double timestamp)
     {
-        if(!_isRunning) {
-            return;
-        }
-
-        if(_simulator == null) {
-            return;
-        }
-
-        if(_isHidden) {
+        if(!_isRunning || _simulator == null || _isHidden)
+        {
             return;
         }
 
@@ -136,19 +145,27 @@
 
         _lastFrameTimestamp = timestamp;
 
-        await _outputCanvasContext.ClearRectAsync(0, 0, _options.Width, _options.Height);
-        await _simulator.UpdateAndRenderAsync(_outputCanvasContext, _isDebugEnabled);
+        try
+        {
+            await _simulator.UpdateAndRenderAsync(_isDebugEnabled);
+        }
+        catch(Exception ex) {
+            await _simulator.CleanupAsync();
+            await SetupSimulatorAsync();
+            await SetCanvasResolutionAsync(_options.Width, _options.Height);
+        }
+
     }
 
     private void OnSettings()
     {
         Logger.LogDebug("Settings Popup");
-        _isConfigurationVisible = true;
+        _isConfigurationVisible = !_isConfigurationVisible;
     }
 
-    private void OnScreenshot()
+    private async Task OnScreenshot()
     {
-
+        await JsRuntime.InvokeVoidAsync("downloadScreenShot", "image");
     }
 
     private void OnRun()
@@ -165,10 +182,5 @@
     private void CloseModal()
     {
         _isConfigurationVisible = false;
-    }
-
-    private void OnOptionsChange(BoidsSimulatorOptions updatedOptions)
-    {
-        _options = updatedOptions;
     }
 }

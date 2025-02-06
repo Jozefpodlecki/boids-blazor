@@ -1,3 +1,7 @@
+![Blazor Version](https://img.shields.io/badge/Blazor-9.0.1-blue.svg)
+![.NET Framework Version](https://img.shields.io/badge/.net-9.0-blue.svg)
+[![codecov](https://codecov.io/github/Jozefpodlecki/boids-blazor/graph/badge.svg?token=L79FIQ1RL7)](https://codecov.io/github/Jozefpodlecki/boids-blazor)
+
 # Flocking Simulator 
 
 The Flocking Simulator is a dynamic, interactive simulation based on the Boids Algorithm to simulate the behavior of a flock of birds or other entities. The algorithm allows a group of entities to exhibit collective behavior, such as cohesion, separation, and alignment, which results in the appearance of a natural flocking pattern.
@@ -20,6 +24,12 @@ The simulator is highly configurable, allowing users to modify parameters dynami
 
 ## Getting Started
 
+### Tailwind
+
+```
+npx @tailwindcss/cli -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css --watch
+```
+
 ```bash
 git clone https://github.com/Jozefpodlecki/boids-blazor
 cd boids-blazor
@@ -27,16 +37,16 @@ dotnet restore
 dotnet run
 ```
 
-## Build
+## Tests
+
+```
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+```
+
+## Deploy
 
 ```bash
 dotnet publish --configuration Release --output build
-```
-
-## Tailwind
-
-```
-npx @tailwindcss/cli -i ./wwwroot/css/styles.css -o ./wwwroot/css/output.css --watch
 ```
 
 ## Credits

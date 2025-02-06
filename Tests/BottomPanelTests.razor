@@ -1,0 +1,19 @@
+@using FlockingSimulator.Components
+@using FlockingSimulator.Components.Icons
+@inherits TestContext
+
+@code {
+    [Fact]
+	public void ShouldShowIconsAndCopyright()
+	{
+		var panel = Render(@<BottomPanel />);
+
+		var playIcon = panel.FindComponent<PlayIcon>();
+		Assert.NotNull(playIcon);
+
+		var settingsIcon = panel.FindComponent<SettingsIcon>();
+		Assert.NotNull(settingsIcon);
+
+		Assert.Contains("©", panel.Markup);
+	}
+}

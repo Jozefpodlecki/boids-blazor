@@ -1,0 +1,42 @@
+@using FlockingSimulator.Components
+@inherits TestContext
+
+@code {
+    [Fact]
+	public void ShouldUpdateOptions()
+	{
+		var options = new BoidsSimulatorOptions();
+
+		Action<BoidsSimulatorOptions> optionsChanged = newOptions =>
+		{
+			options.Fps = newOptions.Fps;
+			options.Count = newOptions.Count;
+			options.SeparationDistance = newOptions.SeparationDistance;
+			options.MaxSpeed = newOptions.MaxSpeed;
+			options.PerceptionRadius = newOptions.PerceptionRadius;
+		};
+
+		var configuration = Render(@<Configuration Options="options" OptionsChanged="optionsChanged" />);
+
+		var fps = configuration.Find("#fps");
+		fps.Input("90");
+
+		var flockCount = configuration.Find("#flock-count");
+		flockCount.Input("10");
+
+		var separationDistance = configuration.Find("#separation-distance");
+		separationDistance.Input("15");
+
+		var speed = configuration.Find("#speed");
+		speed.Input("10");
+
+		var perceptionRadius = configuration.Find("#perception-radius");
+		perceptionRadius.Input("15");
+
+	  	Assert.Equal(90, options.Fps);
+        Assert.Equal(10, options.Count);
+		Assert.Equal(15, options.SeparationDistance);
+		Assert.Equal(10, options.MaxSpeed);
+		Assert.Equal(15, options.PerceptionRadius);
+	}
+}
