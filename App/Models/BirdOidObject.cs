@@ -8,6 +8,7 @@ public class BirdOidObject
     private readonly BoidsSimulatorOptions _options;
     public Vector2 Velocity;
     public Vector2 Position;
+    public float Distance;
 
     public BirdOidObject(int index, Vector2 position, Vector2 velocity, BoidsSimulatorOptions options)
     {
@@ -44,35 +45,37 @@ public class BirdOidObject
         Velocity += newVelocity * _options.DirectionChangeFactor;
     }
 
-    private IEnumerable<(BirdOidObject, float)> GetBoidsInPerception(IEnumerable<BirdOidObject> boids)
+    public IEnumerable<BirdOidObject> GetBoidsInPerception(IEnumerable<BirdOidObject> boids)
     {    
-        var inPerception = new List<(BirdOidObject, float)>();
+        var inPerception = new List<BirdOidObject>();
 
         foreach (var other in boids)
         {
             var distance = Vector2.Distance(Position, other.Position);
+            other.Distance = distance;
 
             if (other == this || distance > _options.PerceptionRadius) 
             {
                 continue;
             }
 
-            inPerception.Add((other, distance));
+            inPerception.Add(other);
         }
 
         return inPerception;
     }
 
-    private void Algorithm(IEnumerable<(BirdOidObject, float)> boids) {
+    private void Algorithm(IEnumerable<BirdOidObject> boids) {
         var alignment = Align(boids);
         // var cohesion = COMCohesion(boids);
         var cohesion = WeightedCohesion(boids);
-        var separation = Separate(boids);
+        // var separation = NormalizedWeightingSeparate(boids);
+        var separation = ExponentialSeparate(boids);
 
         Velocity += alignment + cohesion + separation;
     }
 
-    private void LimitSpeed()
+    public void LimitSpeed()
     {
         // var min = -Vector2.One * _options.MaxSpeed;
         // var max = Vector2.One * _options.MaxSpeed;
@@ -87,7 +90,7 @@ public class BirdOidObject
         }
     }
 
-    private void HandleEdges() {
+    public void HandleEdges() {
         // if (Position.X < 0) Position.X = _options.Width;
         // if (Position.X > _options.Width) Position.X = 0;
         // if (Position.Y < 0) Position.Y = _options.Height;
@@ -117,19 +120,14 @@ public class BirdOidObject
         Velocity += steer;
     }
 
-    private Vector2 Align(IEnumerable<(BirdOidObject, float)> boids)
+    private Vector2 Align(IEnumerable<BirdOidObject> boids)
     {
         var steering = Vector2.Zero;
         var total = 0;
 
         foreach (var other in boids)
         {
-            // if (other == this || other.Item2 > _options.PerceptionRadius) 
-            // {
-            //     continue;
-            // }
-
-            steering += other.Item1.Velocity;
+            steering += other.Velocity;
             total++;
         }
 
@@ -172,20 +170,14 @@ public class BirdOidObject
     /// </summary>
     /// <param name="boids">A collection of other boids in the environment with their positions and velocities.</param>
     /// <returns>A vector representing the cohesion steering force.</returns>
-    private Vector2 COMCohesion(IEnumerable<(BirdOidObject, float)> boids)
+    private Vector2 COMCohesion(IEnumerable<BirdOidObject> boids)
     {
         var steering = Vector2.Zero;
         var total = 0;
 
         foreach (var other in boids)
         {
-            // var distance = Vector2.Distance(Position, other.Position);
-
-            // if (other == this || distance > _options.PerceptionRadius) {
-            //     continue;
-            // }
-
-            steering += other.Item1.Position;
+            steering += other.Position;
             total++;
         }
 
@@ -205,82 +197,78 @@ public class BirdOidObject
         return steering;
     }
 
-    private Vector2 WeightedCohesion(IEnumerable<(BirdOidObject, float)> boids)
-{
-    var steering = Vector2.Zero;
-    var totalWeight = 0f;
-
-    foreach (var other in boids)
+    private Vector2 WeightedCohesion(IEnumerable<BirdOidObject> boids)
     {
-        var distance = other.Item2;
+        var steering = Vector2.Zero;
+        var totalWeight = 0f;
 
-        if (distance <= 0 || other.Item1 == this) 
+        foreach (var other in boids)
         {
-            continue;
+            var distance = other.Distance;
+
+            if (distance <= 0 || other == this) 
+            {
+                continue;
+            }
+
+            var weight = 1 / distance;
+            steering += other.Position * weight;
+            totalWeight += weight;
         }
 
-        var weight = 1 / distance;
-        steering += other.Item1.Position * weight;
-        totalWeight += weight;
-    }
-
-    if (totalWeight > 0)
-    {
-        steering /= totalWeight;
-        steering -= Position;
-
-        if (steering != Vector2.Zero)
+        if (totalWeight > 0)
         {
-            steering = Vector2.Normalize(steering) * _options.MaxSpeed;
+            steering /= totalWeight;
+            steering -= Position;
+
+            if (steering != Vector2.Zero)
+            {
+                steering = Vector2.Normalize(steering) * _options.MaxSpeed;
+            }
+
+            steering -= Velocity;
         }
 
-        steering -= Velocity;
+        return steering;
     }
 
-    return steering;
-}
+        private Vector2 NormalizedWeightingSeparate(IEnumerable<BirdOidObject> boids)
+        {
+            var steering = Vector2.Zero;
+            var total = 0;
 
-    private Vector2 Separate(IEnumerable<(BirdOidObject, float)> boids)
+            foreach (var other in boids)
+            {
+                var diff = Position - other.Position;
+                diff /= other.Distance;
+                steering += diff;
+                total++;
+            }
+
+            if (total > 0)
+            {
+                steering /= total;
+                steering = Vector2.Normalize(steering) * _options.MaxSpeed;
+                steering -= Velocity;
+            }
+
+            return steering;
+    }
+
+    private Vector2 ExponentialSeparate(IEnumerable<BirdOidObject> boids)
     {
-        // var steering = Vector2.Zero;
-        // var total = 0;
-
-        // foreach (var other in boids)
-        // {
-        //     // var distance = Vector2.Distance(Position, other.Position);
-
-        //     // if (other == this || distance > _options.SeparationDistance)
-        //     // {
-        //     //     continue;
-        //     // }
-
-        //     var diff = Position - other.Item1.Position;
-        //     diff /= other.Item2;
-        //     steering += diff;
-        //     total++;
-        // }
-
-        // if (total > 0)
-        // {
-        //     steering /= total;
-        //     steering = Vector2.Normalize(steering) * _options.MaxSpeed;
-        //     steering -= Velocity;
-        // }
-
-        // return steering;
-
         var separationForce = Vector2.Zero;
 
         foreach (var other in boids)
         {
             var combinedSeparationRadius = _options.SeparationDistance * 2;
 
-            if (other.Item2 < combinedSeparationRadius)
+            if (other.Distance < combinedSeparationRadius)
             {
-                var diff = Position - other.Item1.Position;
-                var separationFactor = (float)Math.Exp(-(other.Item2 - _options.SeparationDistance) / _options.SeparationDistance);
+                var diff = Position - other.Position;
+                var separationFactor = (float)Math.Exp(-(other.Distance - _options.SeparationDistance) / _options.SeparationDistance);
 
-                separationForce += (diff / other.Item2) * separationFactor;
+                separationForce += (diff / other.Distance) * separationFactor;
             }
         }
 

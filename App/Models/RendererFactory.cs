@@ -1,12 +1,19 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazor.Extensions;
+using Blazor.Extensions.Canvas.WebGL;
 
-public static class RendererFactory
+[ExcludeFromCodeCoverageAttribute]
+public class RendererFactory : IRendererFactory
 {
-    public static async Task<IRenderer> GetRendererAsync(string context, BECanvasComponent component)
+    public async Task<IRenderer> CreateAsync(string context, BECanvasComponent component)
     {
         if (context == "webgl")
         {
-            var webGLContext = await component.CreateWebGLAsync();
+            var webGLContextAttributes = new WebGLContextAttributes
+            {
+                PreserveDrawingBuffer = true
+            };
+            var webGLContext = await component.CreateWebGLAsync(webGLContextAttributes);
             var canvasContext = new WebGLContextWrapper(webGLContext);
             return new WebGLRenderer(canvasContext);
         }

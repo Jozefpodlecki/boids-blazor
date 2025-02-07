@@ -5,7 +5,7 @@ $reader = [System.IO.StreamReader]::new($filePath)
 $content = $reader.ReadToEnd()
 $reader.Close()
 
-$content = $content -replace "%BASE_HREF%", $newBaseHref
+$content = $content -replace "<base href=`"/`" />", "<base href=`"$newBaseHref`" />"
 
 $writer = [System.IO.StreamWriter]::new($filePath, $false)
 $writer.Write($content)

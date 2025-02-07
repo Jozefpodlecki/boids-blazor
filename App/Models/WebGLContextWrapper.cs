@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazor.Extensions.Canvas.WebGL;
 
+[ExcludeFromCodeCoverageAttribute]
 public class WebGLContextWrapper : IWebGLContext
 {
     private readonly WebGLContext _context;

@@ -5,40 +5,45 @@
 
 @inject ILogger<Index> Logger;
 @inject IJSRuntime JsRuntime;
+@inject IRendererFactory RendererFactory;
+@inject IBoidsSimulatorFactory BoidsSimulatorFactory;
+@implements IAsyncDisposable
 
-<BECanvas @key="_selectedContext" @ref="_canvasReference"></BECanvas>
+<ToastManager IsOpen="@_isBrowserResizeRequired" OnClose="OnToastClose"/>
+<BECanvas @key="@_selectedContext" @ref="_canvasReference"></BECanvas>
 <BottomPanel
-    IsDebugEnabled="_isDebugEnabled"
-    IsRunning="_isRunning"
-    OnDebug="OnDebug"
-    OnScreenshot="OnScreenshot"
-    OnRun="OnRun"
-    OnSettings="OnSettings"  />
+IsDebugEnabled="_isDebugEnabled"
+IsRunning="_isRunning"
+OnDebug="OnDebug"
+OnScreenshot="OnScreenshot"
+OnRun="OnRun"
+OnSettings="OnSettings"  />
 
 @if (_isConfigurationVisible)
 {
     <Configuration
-        Options="_options"
-        Context="@_selectedContext"
-        DrawingContexts="_availableContexts"
-        ContextChanged="ContextChanged"
-        OptionsChanged="OptionsChanged"
-        OnClose="CloseModal" />
+    Options="_options"
+    Context="@_selectedContext"
+    DrawingContexts="_availableContexts"
+    ContextChanged="ContextChanged"
+    OptionsChanged="OptionsChanged"
+    OnClose="OnModalClose" />
 }
 
 @code
 {
+    private CancellationTokenSource? _cancellationTokenSource;
     private BECanvasComponent? _canvasReference = null;
-    private BoidsSimulatorOptions _options = default!;
-    private BoidsSimulator _simulator = default!;
-    @* private string _selectedContext = "2d"; *@
+    private BoidsSimulatorOptions _options = new BoidsSimulatorOptions();
+    private IBoidsSimulator _simulator = default!;
     private string _selectedContext = "webgl";
-    private string[] _availableContexts = new string[0];
+    private IEnumerable<string> _availableContexts = new string[0];
     private bool _isConfigurationVisible = false;
     private bool _isDebugEnabled = false;
     private bool _isRunning = true;
     private double _lastFrameTimestamp;
     private bool _isHidden;
+    private bool _isBrowserResizeRequired;    
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -50,19 +55,35 @@
         await JsRuntime.InvokeVoidAsync("registerEvents", dotNetReference);
         await JsRuntime.InvokeVoidAsync("startAnimationFrame", dotNetReference);
 
-        _availableContexts = await JsRuntime.InvokeAsync<string[]>("getAvailableContexts");
+        _availableContexts = await JsRuntime.InvokeAsync<IEnumerable<string>>("getAvailableContexts");
         Logger.LogDebug("Available contexts: {0}", _availableContexts);
+
+        _isConfigurationVisible = true;
+        StateHasChanged();
     }
 
     private async Task ContextChanged(string context)
     {
         _selectedContext = context;
+
+        if(_simulator != null)
+        {
+            _cancellationTokenSource.Cancel();
+            await _simulator.CleanupAsync();
+            _simulator = null;
+        }
+
+        await SetupSimulatorAsync();
+
+        _isBrowserResizeRequired = true;
+        StateHasChanged();
     }
 
     private async Task SetupSimulatorAsync()
     {  
-        var renderer = await RendererFactory.GetRendererAsync(_selectedContext, _canvasReference);
-        _simulator = new BoidsSimulator(renderer, Logger, _options);
+        _cancellationTokenSource = new CancellationTokenSource();
+        var renderer = await RendererFactory.CreateAsync(_selectedContext, _canvasReference);
+        _simulator = BoidsSimulatorFactory.Create(renderer, _options);
         await _simulator.SetupAsync();
     }
 
@@ -82,12 +103,24 @@
     {
         Logger.LogDebug("OnResize: {} {}", width, height);
         await SetCanvasResolutionAsync(width, height);
-        
+
         _options ??= new BoidsSimulatorOptions();
 
         _options.Width = (int)width;
         _options.Height = (int)height;
+
+        _cancellationTokenSource?.Cancel();
+
+        if(_simulator != null)
+        {
+            await _simulator.CleanupAsync();
+        }
+
+        _simulator = null;
         await SetupSimulatorAsync();
+
+        _isBrowserResizeRequired = false;
+        StateHasChanged();
     }
 
     [JSInvokable]
@@ -125,6 +158,7 @@
 
         if(recreateSimulator)
         {
+            _cancellationTokenSource.Cancel();
             await SetupSimulatorAsync();
         }
     }
@@ -147,12 +181,11 @@
 
         try
         {
-            await _simulator.UpdateAndRenderAsync(_isDebugEnabled);
+            await _simulator.UpdateAndRenderAsync(_isDebugEnabled, _cancellationTokenSource.Token);
         }
-        catch(Exception ex) {
-            await _simulator.CleanupAsync();
-            await SetupSimulatorAsync();
-            await SetCanvasResolutionAsync(_options.Width, _options.Height);
+        catch(Exception ex)
+        {
+
         }
 
     }
@@ -179,8 +212,15 @@
         _isDebugEnabled  = !_isDebugEnabled;
     }
 
-    private void CloseModal()
+    private void OnModalClose() => _isConfigurationVisible = false;
+
+    private void OnToastClose() => _isBrowserResizeRequired = false;
+
+    public async ValueTask DisposeAsync()
     {
-        _isConfigurationVisible = false;
+        if(_simulator != null)
+        {
+            await _simulator.CleanupAsync();
+        }
     }
 }

@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using Blazor.Extensions.Canvas.Canvas2D;
 
+[ExcludeFromCodeCoverageAttribute]
 public class Canvas2DContextWrapper : ICanvas2DContext
 {
     private readonly Canvas2DContext _context;

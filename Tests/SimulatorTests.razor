@@ -1,20 +1,56 @@
+@using Blazor.Extensions
 @using FlockingSimulator.Components
+@using Moq
+@using System.Threading
 @inherits TestContext
 
 @code {
     [Fact]
 	public async Task ShouldDrawCanvas()
 	{
-		@* JSInterop.Setup<Object>("BlazorExtensions.Canvas2d.add", _ => true).SetResult(new object());
-		JSInterop.Setup<Object>("BlazorExtensions.Canvas2d.callBatch", _ => true).SetResult(new object());
-		JSInterop.SetupVoid("registerEvents", _ => true).SetVoidResult();
+		var rendererFactoryMock = new Mock<IRendererFactory>();
+		var rendererMock = new Mock<IRenderer>();
+		var boidsSimulatorMock = new Mock<IBoidsSimulator>();
+		var boidsSimulatorFactoryMock = new Mock<IBoidsSimulatorFactory>();
+        JSInterop.SetupVoid("registerEvents", _ => true).SetVoidResult();
 		JSInterop.SetupVoid("startAnimationFrame", _ => true).SetVoidResult();
+		JSInterop.Setup<IEnumerable<string>>("getAvailableContexts", _ => true).SetResult(new [] { "2d", "webgl" });
+
+		rendererFactoryMock
+			.Setup(pr => pr.CreateAsync(
+				It.IsAny<string>(),
+				It.IsAny<BECanvasComponent>()))
+            .ReturnsAsync(rendererMock.Object);
+
+		boidsSimulatorFactoryMock
+			.Setup(pr => pr.Create(
+				It.IsAny<IRenderer>(),
+				It.IsAny<BoidsSimulatorOptions>()))
+            .Returns(boidsSimulatorMock.Object);
+
+        Services.AddSingleton(rendererFactoryMock.Object);
+		Services.AddSingleton(boidsSimulatorFactoryMock.Object);
+
+		boidsSimulatorMock
+			.Setup(pr => pr.SetupAsync())
+            .Returns(Task.CompletedTask);
+
+		boidsSimulatorMock
+			.Setup(pr => pr.UpdateAndRenderAsync(
+				It.IsAny<bool>(),
+				It.IsAny<CancellationToken>()
+			))
+            .Returns(Task.CompletedTask);
 
 		var simulator = RenderComponent<Simulator>();
 
 		await simulator.InvokeAsync(async () => {
 			await simulator.Instance.OnResizeAsync(600, 400);
 			await simulator.Instance.OnFrameAsync(1000);
-		}); *@
+		});
+
+		rendererFactoryMock.VerifyAll();
+		boidsSimulatorFactoryMock.VerifyAll();
+		boidsSimulatorMock.VerifyAll();
 	}
 }

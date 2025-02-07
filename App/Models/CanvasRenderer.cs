@@ -8,7 +8,7 @@ public class CanvasRenderer : IRenderer
         _context = context;
     }
 
-    public Task SetupAsync() => Task.CompletedTask;
+    public Task SetupAsync(BoidsSimulatorOptions options) => Task.CompletedTask;
 
     public async Task RenderAsync(BirdOidObject[] boids, BoidsSimulatorOptions options, Random random, bool isDebugEnabled)
     {
@@ -23,8 +23,6 @@ public class CanvasRenderer : IRenderer
 
         foreach (var boid in boids)
         {
-            boid.Update(boids, random);
-
             await _context.BeginPathAsync();
             await _context.ArcAsync(boid.Position.X, boid.Position.Y, radius, startAngle , endAngle);
             

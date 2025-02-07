@@ -49,6 +49,11 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 dotnet publish --configuration Release --output build
 ```
 
+## Known issues
+
+There's a bug where `BECanvasComponent` does not properly rerender when canvas context changes.
+Workaround, resize browser window manually.
+
 ## Credits
 
 - [VS Code and Blazor WASM: Debug with Hot Reload](https://dev.to/sacantrell/vs-code-and-blazor-wasm-debug-with-hot-reload-5317)
