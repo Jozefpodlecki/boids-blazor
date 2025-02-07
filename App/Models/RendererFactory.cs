@@ -5,26 +5,42 @@ using Blazor.Extensions.Canvas.WebGL;
 [ExcludeFromCodeCoverageAttribute]
 public class RendererFactory : IRendererFactory
 {
+    private readonly ILogger<IRendererFactory> _logger;
+
+    public RendererFactory(ILogger<IRendererFactory> logger)
+    {
+        _logger = logger;
+    }
+
     public async Task<IRenderer> CreateAsync(string context, BECanvasComponent component)
     {
-        if (context == "webgl")
+        try
         {
-            var webGLContextAttributes = new WebGLContextAttributes
+            if (context == "webgl")
             {
-                PreserveDrawingBuffer = true
-            };
-            var webGLContext = await component.CreateWebGLAsync(webGLContextAttributes);
-            var canvasContext = new WebGLContextWrapper(webGLContext);
-            return new WebGLRenderer(canvasContext);
+                var webGLContextAttributes = new WebGLContextAttributes
+                {
+                    PreserveDrawingBuffer = true
+                };
+                var webGLContext = await component.CreateWebGLAsync(webGLContextAttributes);
+                var canvasContext = new WebGLContextWrapper(webGLContext);
+                return new WebGLRenderer(canvasContext);
+            }
+            else if (context == "2d")
+            {
+                var canvasContext = new Canvas2DContextWrapper(await component.CreateCanvas2DAsync());
+                return new CanvasRenderer(canvasContext);
+            }
+            else
+            {
+                throw new InvalidOperationException("Unsupported context");
+            }
         }
-        else if (context == "2d")
+        catch (Exception ex)
         {
-            var canvasContext = new Canvas2DContextWrapper(await component.CreateCanvas2DAsync());
-            return new CanvasRenderer(canvasContext);
+            _logger.LogError(ex, "An error occurred whilst resolving canvas context");
+            return new VoidRenderer();
         }
-        else
-        {
-            throw new InvalidOperationException("Unsupported context");
-        }
+        
     }
 }
