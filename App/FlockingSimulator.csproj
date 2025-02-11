@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <BaseHref>https://jozefpodlecki.github.io/boids-blazor/</BaseHref>
+    <BaseHref>boids-blazor/</BaseHref>
   </PropertyGroup>
 
   <ItemGroup>

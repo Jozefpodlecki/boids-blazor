@@ -1,7 +1,9 @@
 
+using System.Diagnostics.CodeAnalysis;
 using Blazor.Extensions.Canvas.WebGL;
 
-public class WebGLRenderer : IRenderer
+[ExcludeFromCodeCoverageAttribute]
+internal class WebGLRenderer : IRenderer
 {
     private readonly IWebGLContext _context;
     private WebGLProgram _program;

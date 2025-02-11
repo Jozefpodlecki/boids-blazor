@@ -1,5 +1,8 @@
 
-public class VoidRenderer : IRenderer
+using System.Diagnostics.CodeAnalysis;
+
+[ExcludeFromCodeCoverageAttribute]
+internal class VoidRenderer : IRenderer
 {
     public VoidRenderer()
     {

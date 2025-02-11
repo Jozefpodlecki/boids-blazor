@@ -53,4 +53,88 @@
 		boidsSimulatorFactoryMock.VerifyAll();
 		boidsSimulatorMock.VerifyAll();
 	}
+
+	[Fact]
+	public async Task ShouldRecreateSimulatorOnOptionsChange()
+	{
+		var rendererFactoryMock = new Mock<IRendererFactory>();
+		var rendererMock = new Mock<IRenderer>();
+		var boidsSimulatorMock = new Mock<IBoidsSimulator>();
+		var boidsSimulatorFactoryMock = new Mock<IBoidsSimulatorFactory>();
+        JSInterop.SetupVoid("registerEvents", _ => true).SetVoidResult();
+		JSInterop.SetupVoid("startAnimationFrame", _ => true).SetVoidResult();
+		JSInterop.Setup<IEnumerable<string>>("getAvailableContexts", _ => true).SetResult(new [] { "2d", "webgl" });
+
+		rendererFactoryMock
+			.Setup(pr => pr.CreateAsync(
+				It.IsAny<string>(),
+				It.IsAny<BECanvasComponent>()))
+            .ReturnsAsync(rendererMock.Object);
+
+		boidsSimulatorFactoryMock
+			.Setup(pr => pr.Create(
+				It.IsAny<IRenderer>(),
+				It.IsAny<BoidsSimulatorOptions>()))
+            .Returns(boidsSimulatorMock.Object);
+
+        Services.AddSingleton(rendererFactoryMock.Object);
+		Services.AddSingleton(boidsSimulatorFactoryMock.Object);
+
+		var simulator = RenderComponent<Simulator>();
+
+		await simulator.InvokeAsync(async () => {
+			await simulator.Instance.OnResizeAsync(600, 400);
+		});
+
+		var configuration = simulator.FindComponent<Configuration>();
+
+		var flockCount = configuration.Find("#flock-count");
+		flockCount.Input("10");
+
+		boidsSimulatorFactoryMock
+			.Verify(service => service.Create(
+				It.IsAny<IRenderer>(),
+				It.IsAny<BoidsSimulatorOptions>()
+			), Times.Exactly(2));
+	}
+
+	[Fact]
+	public async Task ShouldRecreateSimulatorOnContextChange()
+	{
+		var rendererFactoryMock = new Mock<IRendererFactory>();
+		var rendererMock = new Mock<IRenderer>();
+		var boidsSimulatorMock = new Mock<IBoidsSimulator>();
+		var boidsSimulatorFactoryMock = new Mock<IBoidsSimulatorFactory>();
+        JSInterop.SetupVoid("registerEvents", _ => true).SetVoidResult();
+		JSInterop.SetupVoid("startAnimationFrame", _ => true).SetVoidResult();
+		JSInterop.Setup<IEnumerable<string>>("getAvailableContexts", _ => true).SetResult(new [] { "2d", "webgl" });
+
+		rendererFactoryMock
+			.Setup(pr => pr.CreateAsync(
+				It.IsAny<string>(),
+				It.IsAny<BECanvasComponent>()))
+            .ReturnsAsync(rendererMock.Object);
+
+		boidsSimulatorFactoryMock
+			.Setup(pr => pr.Create(
+				It.IsAny<IRenderer>(),
+				It.IsAny<BoidsSimulatorOptions>()))
+            .Returns(boidsSimulatorMock.Object);
+
+        Services.AddSingleton(rendererFactoryMock.Object);
+		Services.AddSingleton(boidsSimulatorFactoryMock.Object);
+
+		var simulator = RenderComponent<Simulator>();
+
+		var configuration = simulator.FindComponent<Configuration>();
+
+		var drawingContext = configuration.Find("#drawing-context");
+		drawingContext.Change("2d");
+
+		boidsSimulatorFactoryMock
+			.Verify(service => service.Create(
+				It.IsAny<IRenderer>(),
+				It.IsAny<BoidsSimulatorOptions>()
+			), Times.Exactly(1));
+	}
 }

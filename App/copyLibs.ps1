@@ -1,5 +1,5 @@
-$source = "node_modules\html2canvas\dist\html2canvas.min.js"
-$destination = "wwwroot\lib\html2canvas.min.js"
+$source = "node_modules\html2canvas-pro\dist\html2canvas-pro.min.js"
+$destination = "wwwroot\lib\html2canvas-pro.min.js"
 
 $destinationFolder = Split-Path $destination
 if (-not (Test-Path $destinationFolder)) {

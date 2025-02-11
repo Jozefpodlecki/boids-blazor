@@ -1,5 +1,8 @@
 
-public class CanvasRenderer : IRenderer
+using System.Diagnostics.CodeAnalysis;
+
+[ExcludeFromCodeCoverageAttribute]
+internal class CanvasRenderer : IRenderer
 {
     private readonly ICanvas2DContext _context;
 

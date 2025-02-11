@@ -16,7 +16,16 @@
 			options.PerceptionRadius = newOptions.PerceptionRadius;
 		};
 
-		var configuration = Render(@<Configuration Options="options" OptionsChanged="optionsChanged" />);
+		var drawingContexts = new [] { "2d", "webgl" };
+
+		var configuration = Render(@<Configuration
+			Context="2d"
+			DrawingContexts="drawingContexts"
+			Options="options"
+			OptionsChanged="optionsChanged" />);
+
+		var drawingContext = configuration.Find("#drawing-context");
+		drawingContext.Change("webgl");
 
 		var fps = configuration.Find("#fps");
 		fps.Input("90");

@@ -3,7 +3,7 @@ using Blazor.Extensions;
 using Blazor.Extensions.Canvas.WebGL;
 
 [ExcludeFromCodeCoverageAttribute]
-public class RendererFactory : IRendererFactory
+internal class RendererFactory : IRendererFactory
 {
     private readonly ILogger<IRendererFactory> _logger;
 
